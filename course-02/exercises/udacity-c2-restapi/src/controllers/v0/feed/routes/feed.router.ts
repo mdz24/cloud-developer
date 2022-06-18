@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { FeedItem } from '../models/FeedItem';
 import { requireAuth } from '../../users/routes/auth.router';
 import * as AWS from '../../../../aws';
+import { sendImageForFiltering } from '../../../../util/util';
 
 const router: Router = Router();
 
@@ -28,7 +29,7 @@ router.get('/:id',async (req: Request, res: Response) => {
     res.send(item);
 })
 
-// update a specific resource
+// Update a specific resource
 router.patch('/:id', 
     requireAuth, 
     async (req: Request, res: Response) => {
@@ -60,7 +61,6 @@ router.get('/signed-url/:fileName',
 });
 
 // Post meta data and the filename after a file is uploaded 
-// NOTE the file name is they key name in the s3 bucket.
 // body : {caption: string, fileName: string};
 router.post('/', 
     requireAuth, 
@@ -85,7 +85,10 @@ router.post('/',
 
     const saved_item = await item.save();
 
-    saved_item.url = AWS.getGetSignedUrl(saved_item.url);
+    const signed_url = AWS.getGetSignedUrl(saved_item.url);
+    await sendImageForFiltering(signed_url);
+
+    saved_item.url = signed_url;
     res.status(201).send(saved_item);
 });
 
