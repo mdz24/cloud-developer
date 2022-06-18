@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { FeedItem } from '../models/FeedItem';
 import { requireAuth } from '../../users/routes/auth.router';
 import * as AWS from '../../../../aws';
+import { sendImageForFiltering } from '../../../../util/util';
 
 const router: Router = Router();
 
@@ -84,7 +85,10 @@ router.post('/',
 
     const saved_item = await item.save();
 
-    saved_item.url = AWS.getGetSignedUrl(saved_item.url);
+    const signed_url = AWS.getGetSignedUrl(saved_item.url);
+    await sendImageForFiltering(signed_url);
+
+    saved_item.url = signed_url;
     res.status(201).send(saved_item);
 });
 
